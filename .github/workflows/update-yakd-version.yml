@@ -13,6 +13,9 @@ permissions:
 jobs:
   bump-yakd-version:
     if: github.repository == 'kubernetes/minikube' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -37,16 +40,16 @@ jobs:
         if: ${{ steps.bumpYakd.outputs.changes != '' }}
         uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8
         with:
-          token: ${{ secrets.MINIKUBE_BOT_PAT }}
+          token: ${{ github.repository == 'kubernetes/minikube' && (secrets.MINIKUBE_BOT_PAT || 'missing minikube bot pat') || github.token }}
           commit-message: 'Addon yakd: Update manusa/yakd image from ${{ steps.bumpYakd.outputs.OLD_VERSION }} to ${{ steps.bumpYakd.outputs.NEW_VERSION }}'
-          committer: minikube-bot <20374350+minikube-bot@users.noreply.github.com>
-          author: minikube-bot <20374350+minikube-bot@users.noreply.github.com>
+          committer: ${{ github.repository == 'kubernetes/minikube' && 'minikube-bot <20374350+minikube-bot@users.noreply.github.com>' || '' }}
+          author: ${{ github.repository == 'kubernetes/minikube' && 'minikube-bot <20374350+minikube-bot@users.noreply.github.com>' || '' }}
           branch: auto_bump_yakd_version
-          push-to-fork: minikube-bot/minikube
-          base: master
+          push-to-fork: ${{ github.repository == 'kubernetes/minikube' && 'minikube-bot/minikube' || '' }}
+          base: ${{ github.repository == 'kubernetes/minikube' && 'master' || github.ref_name }}
           delete-branch: true
           title: 'Addon yakd: Update manusa/yakd image from ${{ steps.bumpYakd.outputs.OLD_VERSION }} to ${{ steps.bumpYakd.outputs.NEW_VERSION }}'
-          labels: ok-to-test
+          labels: ${{ github.repository == 'kubernetes/minikube' && 'ok-to-test' || '' }}
           body: |
             The [yakd](https://github.com/manusa/yakd) project released a new yakd image
 
